@@ -181,6 +181,13 @@ export default defineConfig({
                         link: 'pipelines',
                         icon: 'seti:pipeline',
                         items: [
+                            {
+                                label: 'Running pipelines',
+                                items : [
+                                    { label: 'Common guidelines', slug: 'pipelines/run' },
+                                    { label: 'Offline execution', slug: 'pipelines/offline' }
+                                ]
+                            },
                             { label: 'Add your pipeline', slug: 'pipelines/submit' }
                         ]
                     }
