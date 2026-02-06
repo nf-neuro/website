@@ -13,8 +13,8 @@ of nextflow capabilities**. This means **you don't even have to download or inst
 
 |||
 |-|-|
-|**[Nextflow](https://www.nextflow.io/docs/latest/install.html)** | the backbone pipeline executor, actually the only **required** dependency |
-| **Container engine** | this is optional, but **without it you need to install all the software required to run the pipeline**. We recommend [Docker](https://docs.docker.com/get-started/get-docker/) for local usage (where you have administrative rights), and [apptainer](https://apptainer.org/docs/admin/main/installation.html) anywhere else (computing clusters in the cloud or HPC infrastructures are typical use-cases) |
+|**[Nextflow](https://www.nextflow.io/docs/latest/install.html)** | The backbone pipeline executor, actually the only **required** dependency. |
+| **Container engine** | This is optional, but **without it you need to install all the software required to run the pipeline**. We recommend [Docker](https://docs.docker.com/get-started/get-docker/) for local usage (where you have administrative rights), and [apptainer](https://apptainer.org/docs/admin/main/installation.html) anywhere else (computing clusters in the cloud or HPC infrastructures are typical use-cases). |
 
 ## Prepare I/O
 
@@ -91,9 +91,11 @@ Each pipeline comes with **its own set or parameters (`params`)** you can edit t
 or your research question. Each also prescribe a set of `profile`, logical configuration groups you can use to apply **behaviors predefined
 by the developer**, such as :
 
-- `gpu` : enables GPU acceleration for modules supporting it
-- `docker` : use the [Docker](https://docs.docker.com/get-started/get-docker/) engine for execution isolation
-- `slurm` : dispatch modules execution using the [SLURM](https://slurm.schedmd.com/overview.html) scheduler (works on HPC infrastructures)
+|||
+|-|-|
+| **`gpu`** | Enable GPU acceleration for modules supporting it. |
+| **`docker`** | Use the [Docker](https://docs.docker.com/get-started/get-docker/) engine for execution isolation. |
+| **`slurm`** | Dispatch modules execution using the [SLURM](https://slurm.schedmd.com/overview.html) scheduler (works on HPC infrastructures). |
 
 :::tip
 All parameters `params` and profiles `profile` are described in the documentation related to te pipelines themselves. Below are lists of
@@ -119,19 +121,11 @@ nextflow run <pipeline> -r <version> -profile <profiles,separated,by,commas>
 
 **Replace :**
 
-- `<pipeline>` with the name of your pipeline.
-
-  It must abide to the **repository name hosting it on Github** (for example,
-  `scilus/sf-tractomics` refers to the `sf-tractomics` pipeline from the `scilus` organisation)
-
-- `<version>` with the version of the pipeline to use.
-
-  This can be a **release**, a **branch** name or a full **commit SHA**
-
-- `<profiles,separated,by,commas>` with the list of profiles to apply to the pipeline's configuration.
-
-  In overwrite order, such that `-profile slurm,docker,gpu` first applies the `slurm` profile and superseeds it
-  with the configuration prescribed by the `docker` and `gpu` profile, successively.
+|||
+|-|-|
+| **`<pipeline>`** | With the name of your pipeline. It must abide to the **repository name hosting it on Github** (for example, `scilus/sf-tractomics` refers to the `sf-tractomics` pipeline from the `scilus` organisation). |
+| **`<version>`** | With the version of the pipeline to use. This can be a **release**, a **branch** name or a full **commit SHA**. |
+| **`<profiles,separated,by,commas>`** | With the list of profiles to apply to the pipeline's configuration. In overwrite order, such that `-profile slurm,docker,gpu` first applies the `slurm` profile and superseeds it with the configuration prescribed by the `docker` and `gpu` profile, successively. |
 
 :::tip[You can always download the pipeline locally]
 The above procedure differs slightly if you have downloaded the pipeline locally. In that case, no need to specify the
@@ -185,6 +179,20 @@ inspect the full procedure thoroughly and **tailor it up to your own cluster con
    should experience no problems. Else, [they can get in touch](https://github.com/nf-neuro/modules/issues) with us for rapid feedback !
    :::
 
+5. **On compute nodes**, the temporary filesystem is a physical location, **not mounted from RAM**. In the case a RAM mount is used, you must create
+   a location yourself to host the temporary files produced by the pipeline. Then, tell nextflow to use this path by setting the `TMPDIR` environment
+   variable
+
+   :::tip[How to detect a RAM mount]
+   The simplest way is with the `df` command, which displays the size and types of the filesystems mounted on the compute node. If you see `tmpfs`
+   as the type of the mount where `/tmp` is located, then the node is using a RAM mount.
+
+   ```bash
+   df -h | grep /tmp
+   ```
+   ::: 
+   
+
 </Steps>
 
 ### HPC in SLURM mode
@@ -223,10 +231,21 @@ environment following [the guidelines here](/pipelines/offline).
 
    |||
    |-|-|
-   | **`<containers location>`** | the directory where you downloaded the pipeline's containers for offline usage |
-   | **`<slurm account name>`** | the account nextflow will use to submit the pipeline's jobs |
+   | **`<containers location>`** | The directory where you downloaded the pipeline's containers for offline usage. |
+   | **`<slurm account name>`** | The account nextflow will use to submit the pipeline's jobs. |
 
-5. Launch the pipeline with the command below, carefully replacing the variable fields :
+5. **If your cluster uses a RAM mount for temporary files**, change its location to a directory on `/scratch`, or another
+   physical filesystem :
+
+   ```bash
+   export TMPDIR="<physical location>"
+   ```
+
+   |||
+   |-|-|
+   | **`<physical location>`** | Directory on a physical filesystem accessible to compute nodes |
+
+6. Launch the pipeline with the command below, carefully replacing the variable fields :
 
    ```bash
    nextflow run <pipeline name> -r <version> \
@@ -253,3 +272,52 @@ environment following [the guidelines here](/pipelines/offline).
 Exceptions aside, **compute nodes in HPC facilities don't have access to the web**. You **need** to first deploy the offline
 environment following [the guidelines here](/pipelines/offline).
 :::
+
+<Steps>
+
+1. Open a terminal **on a login node** on the cluster where you want to run the pipeline.
+
+2. Move to a suitable **working directory** (we recommend a directory under your personal `/scratch`).
+
+3. Create a **`sbatch` submission script. You can copy the one provided below and replace its `<variables>` with values fitting
+   your environment
+
+   ```bash
+   #!/bin/sh
+   #SBATCH --mail-user=<email>
+   #SBATCH --mail-type=ALL
+
+   #SBATCH --account=<account>
+   #SBATCH --nodes=1
+   #SBATCH --cpus-per-task=<cpus on node>
+   #SBATCH --mem=<memory on node>
+   #SBATCH --time=<maximum execution time>
+
+   # Load the required modules.
+   module load nextflow apptainer
+
+   # Variables for containers, etc.
+   export NXF_APPTAINER_CACHEDIR=<containers location>
+
+   # Call for the pipeline execution.
+   nextflow run <pipeline name> -r <version> \
+      --input <input> \
+      --outdir <output> \
+      -profile apptainer \
+      -resume
+   ```
+
+   |||
+   |-|-|
+   | **`<email>`** | E-mail address where to send notifications on the status of the pipeline's execution. |
+   | **`<account>`** | Slurm account to access computing resources. |
+   | **`<cpus on node>`** | Number of cpus to reserve for processing. We recommend setting this to the maximum number of cpus available, but refer to your pipeline's documentation for details. |
+   | **`<memory on node>`** | Amount of RAM to reserve for processing. **This also includes all potential temporary mounts (`tmpfs`)**. |
+   | **`<maximum execution time>`** | Amount of time allowed for the pipeline to run before cancellation. |
+   | **`<containers location>`** | The directory where you downloaded the pipeline's containers for offline usage. |
+   | **`<pipeline name>`** | Name of your downloaded pipeline. On newer nextflow version, use the **repository name** (usually from Github). **You can supply the path to the pipeline instead**, but you must omit the `-r <version>` argument. |
+   | **`<version>`** | The version of the pipeline to use, if using its **repository name** above. |
+   | **`<input>`** | The directory containing the input files. **This directory must be optimally accessible for reading by computing nodes**. |
+   | **`<output>`** | The directory where the output files will be published. **This directory must be optimally accessible for writing by computing nodes**. |
+
+</Steps>

@@ -60,3 +60,8 @@ starlight-tabs {
 	background-color: light-dark(var(--color-gray-100), var(--color-gray-700));
 	padding: 10px;
 }
+
+tr td:first-child {
+    width: 1%;
+    white-space: nowrap;
+}
