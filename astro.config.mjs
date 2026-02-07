@@ -12,6 +12,9 @@ export default defineConfig({
     site: "https://nf-neuro.github.io",
     base: "/",
     trailingSlash: 'never',
+    redirects: {
+        '/pipelines/download': 'https://raw.githubusercontent.com/nf-neuro/modules/main/assets/download_pipeline.sh'
+    },
     integrations: [
         starlight({
             title: 'nf-neuro',
