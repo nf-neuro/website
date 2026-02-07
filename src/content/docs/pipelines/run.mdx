@@ -1,0 +1,360 @@
+---
+title: Running pipelines
+description: Common guidelines to run nf-neuro pipelines
+---
+
+import CoffeeIcon from '~icons/codicon/coffee';
+import { Steps } from '@astrojs/starlight/components';
+
+## Prerequisites
+
+Pipelines built against the **nf-neuro** ecosystem and published through it **support the full extent
+of nextflow capabilities**. This means **you don't even have to download or install a thing !** Well, that is except :
+
+|||
+|-|-|
+|**[Nextflow](https://www.nextflow.io/docs/latest/install.html)** | The backbone pipeline executor, actually the only **required** dependency. |
+| **Container engine** | This is optional, but **without it you need to install all the software required to run the pipeline**. We recommend [Docker](https://docs.docker.com/get-started/get-docker/) for local usage (where you have administrative rights), and [apptainer](https://apptainer.org/docs/admin/main/installation.html) anywhere else (computing clusters in the cloud or HPC infrastructures are typical use-cases). |
+
+## Prepare I/O
+
+This is your **main task**. You need to prepare the spaces where your input data lives, according to
+your pipeline's input specification. You also need to allocate a space for the pipeline's outputs. You'll
+need to refer to its own documentation to get everything in order, as each pipeline has its own specificities.
+Nomatterwhat, here is a quick checklist to get everything in good shape, ready to address any pipeline's I/O
+peculiarities :
+
+<Steps>
+
+1. **Create a directory for your current project/processing**. It will act as a single entrypoint to access
+   the outputs from processing and to introspect into the pipelines code and its executions on your data.
+   **All following commands and manipulations take place inside this directory**.
+
+   :::danger
+   **On HPC, this directory needs to be accessible from computing nodes. Else many errors might ensue !**
+   :::
+
+2. **Create an `input` directory where to place and organize your input data**. If it's light enough or placing it
+   all in one place makes sense to you, copy it there. Else, a good way to get everything organized there is
+   with [symbolic links](https://www.linode.com/docs/guides/linux-symlinks/) between the actual locations of your
+   data and the `input` directory.
+
+   :::caution
+   **Symbolic links must be carefully verified on HPC**, as so they are accessible by computing nodes
+   :::
+
+   :::tip
+   Most pipelines use the **globstar** (`**`) pattern to naviguate in their input directory. This means you can place your
+   input data as deep as you want (for example `.../input/data/I/want/to/process/subject-1/...`) and the pipeline
+   will find it. The downside is it can make **hiding a subject from processing** troublesome, for which you'll probably need
+   to take its data out of the input directory altogether.
+   :::
+
+3. **Create a `results` directory to store the pipeline's output**. Validate enough disk space is available (no need to
+   be exact, when in doubt ensure you have **a lot** of it). The pipeline's execution should not be affected if no more
+   space is available to write results, but you won't have access to them easily. In which case, you might need to re-execute
+   some of the steps or the whole pipeline a second time, wasting time and computing resources.
+
+   :::tip
+   Pipeline's usually work in **overwrite mode**, meaning **subsequent pipeline runs will write over previous ones for the same
+   input subjects**. If unsure, consult the documentation for the specific pipeline you want to use
+   :::
+
+4. **Create or edit `nextflow.config`** in the directory created at **step 1**. In it, set or replace :
+
+   ```groovy
+   params.input = 'input'
+   params.outdir = 'results'
+   ```
+
+   Refer to the documentation of the pipeline you are running for any other **input parameters** needing to be set, and for **execution
+   parameters** that might be of interest to set given your data, project or research question.
+
+   :::tip[Centralize your configuration !]
+   You can specify configuration for the pipeline in many different ways. **We cannot recommend enough you centralize everything in the
+   `nextflow.config` we made you create above, for debugging purposes, but also for reuse, sharing and safekeeping**. A rule of thumb is
+   compiling all **static** configuration in that file, and supply parameters at the command line only to slightly execution
+   to specific use-cases. **Overriding parameters using the `-c` nextflow argument should be avoided at all costs !**
+   :::
+
+</Steps>
+
+:::caution[Validation before next steps]
+Before continuing, refer to the documentation of the pipeline you are using and validates its specificities for **I/O** and **configuration**,
+as the procedure defined here only sets up the common grounds for its execution.
+:::
+
+
+## Configure execution
+
+Each pipeline comes with **its own set or parameters (`params`)** you can edit to tailor the execution to your data, your project
+or your research question. Each also prescribe a set of `profile`, logical configuration groups you can use to apply **behaviors predefined
+by the developer**, such as :
+
+|||
+|-|-|
+| **`gpu`** | Enable GPU acceleration for modules supporting it. |
+| **`docker`** | Use the [Docker](https://docs.docker.com/get-started/get-docker/) engine for execution isolation. |
+| **`slurm`** | Dispatch modules execution using the [SLURM](https://slurm.schedmd.com/overview.html) scheduler (works on HPC infrastructures). |
+
+:::tip
+All parameters `params` and profiles `profile` are described in the documentation related to te pipelines themselves. Below are lists of
+common parameters and profiles common to all pipelines, made available through the `nf-core` pipeline template
+:::
+
+### Common parameters
+
+#### Results publishing
+
+|||
+|-|-|
+| **`publish_dir_mode`** | Set to `copy` by default, which means results are copied from working directories to output. Refer to the [nextflow documentation](https://www.nextflow.io/docs/latest/reference/process.html#process-publishdir) for other options and their specificities. |
+
+#### Institutional configuration
+
+|||
+|-|-|
+| **`config_profile_name`** | If set, this configuration will be loaded to tailor to specified institution. Refer to [this page](https://nf-co.re/configs/) for a full list of configurations available. | 
+
+#### Notifications
+
+|||
+|-|-|
+| **`email`** | If set, a summary is sent on pipeline completion, regardless of status. |
+| **`email_on_fail`** | If set, summary is only sent if the pipeline fails. |
+| **`plaintext_email`** | If set, disables `HTML` e-mail content. |
+| **`max_multiqc_email_size`** | Exclude MultiQC reports exceeding this size from summary e-mails |
+
+#### Miscellaneous
+
+|||
+|-|-|
+| **`version`** | If set, prints the pipeline's version to terminal without execution. |
+| **`multiqc_title`** | Title displayed atop all MultiQC reports generated by the pipeline. |
+
+
+### Common profiles
+
+|||
+|-|-|
+| **`docker`** | Use [Docker](https://docker.com) containers to isolate process execution. |
+| **`apptainer`** | Use [Apptainer](https://apptainer.org/docs/admin/main/index.html) containers to isolate process execution. |
+| **`singularity`** | Use [Singularity](https://docs.sylabs.io/guides/latest/user-guide/) containers to isolate process execution. |
+| **`arm`** | Customize configuration for the ARM chipset. Enables container emulation from `amd64` builds. |
+| **`debug`** | Enables stricter validation, as well as the collection and preservation of runtime information. Disables post-execution cleanup tasks. |
+
+## Run pipelines locally
+
+:::tip[Running pipelines without web access]
+If for any reason you **must run a pipeline in an offline environment, we got you covered** !
+Follow [these simple guidelines](/pipelines/offline) to deploy your offline setup and get back here.
+:::
+
+With all **I/O** and **configuration** done, running the pipeline take a single command line :
+
+```bash
+nextflow run <pipeline> -r <version> -profile <profiles,separated,by,commas>
+```
+
+**Replace :**
+
+|||
+|-|-|
+| **`<pipeline>`** | With the name of your pipeline. It must abide to the **repository name hosting it on Github** (for example, `scilus/sf-tractomics` refers to the `sf-tractomics` pipeline from the `scilus` organisation). |
+| **`<version>`** | With the version of the pipeline to use. This can be a **release**, a **branch** name or a full **commit SHA**. |
+| **`<profiles,separated,by,commas>`** | With the list of profiles to apply to the pipeline's configuration. In overwrite order, such that `-profile slurm,docker,gpu` first applies the `slurm` profile and superseeds it with the configuration prescribed by the `docker` and `gpu` profile, successively. |
+
+:::tip[You can always download the pipeline locally]
+The above procedure differs slightly if you have downloaded the pipeline locally. In that case, no need to specify the
+**version** with `-r`, but you need to replace the `<pipeline>` section with the **full path to your pipeline location**.
+:::
+
+:::caution
+On the **first online pipeline run**, you might notice it takes some time before anything launches. **Containers are
+downloading**, which can take a while. Be patient, <span class="hover:text-yellow-700">it's a good time for a hot drink
+<CoffeeIcon class="inline-icon" aria-hidden /> !</span>
+:::
+
+## Run pipelines on HPC
+
+**Nextflow** knows how to handle scheduling the pipeline's job using [SLURM](https://slurm.schedmd.com/overview.html) and most HPC
+infrastructure supports it (for example **Alliance Canada** advertises [full support](https://docs.alliancecan.ca/wiki/Nextflow), especially
+pipelines distributed through the [nf-core](https://nf-co.re) toolchain). In **nf-neuro**, we can be a bit more strict. Most
+procedures prescribed by clusters still apply, but could require some adjustments. **As example, we provide here a complete walkthrough for
+configuration and execution on Alliance Canada HPC**. While its configuration should align with other HPC cluster deployments quite well,
+inspect the full procedure thoroughly and **tailor it up to your own cluster configuration**.
+
+### Validate before execution
+
+<Steps>
+
+1. You have access to an **institutional configuration** for your cluster. **We [maintain one](https://nf-co.re/configs/alliance_canada/)
+   for all clusters under the Alliance Canada umbrella**. You might [find one here](https://nf-co.re/configs/) for your own alternative usage.
+   Else, you should probably develop one. In this case, refer to expertise on the [nf-core configuration repository](https://github.com/nf-core/configs)
+   for guidance.
+
+2. Your **input data is located in a filesystem that is accessible to compute nodes**. This is **crucial**. Not only this path needs to be
+   accessible, it must be **optimal for read access**. The pipeline will pull data from here to process, so its **input efficiency must be on-par**.
+
+   :::tip
+   On **Alliance Canada** clusters, the **project** directory is suitable for inputs. If you experience errors or reduced efficiency, create a
+   temporary copy into **scratch** and use it as input instead.
+   :::
+
+3. The **output location** where the processed data will be written is **optimally acessible for write**. As module's execution completes, this
+   location will experience **heavy loads of write operations**.
+
+   :::tip
+   On **Alliance Canada** clusters, **use `scratch` for writing outputs**. Then, on completion, no matter the status, copy the results to your project directory.
+   :::
+
+4. You are not using **`$HOME`**, or **any other restricted file paths** for anything related to the execution of the pipeline. **HPC clusters
+   are really picky about this ! If you experience cryptic errors, you might be using one of those.**
+
+   :::tip
+   On **Alliance Canada** clusters, if you limit yourself to the `scratch` filesystem and your allocated `project` directory for everything, you
+   should experience no problems. Else, [they can get in touch](https://github.com/nf-neuro/modules/issues) with us for rapid feedback !
+   :::
+
+5. **On compute nodes**, the temporary filesystem is a physical location, **not mounted from RAM**. In the case a RAM mount is used, you must create
+   a location yourself to host the temporary files produced by the pipeline. Then, tell nextflow to use this path by setting the `TMPDIR` environment
+   variable
+
+   :::tip[How to detect a RAM mount]
+   The simplest way is with the `df` command, which displays the size and types of the filesystems mounted on the compute node. If you see `tmpfs`
+   as the type of the mount where `/tmp` is located, then the node is using a RAM mount.
+
+   ```bash
+   df -h | grep /tmp
+   ```
+   ::: 
+   
+
+</Steps>
+
+### HPC in SLURM mode
+
+:::danger
+Exceptions aside, **compute nodes in HPC facilities don't have access to the web**. You **need** to first deploy the offline
+environment following [the guidelines here](/pipelines/offline).
+:::
+
+<Steps>
+
+1. Open a terminal **on a login node** on the cluster where you want to run the pipeline.
+
+   :::caution
+   **This terminal needs to survive as long as the pipeline runs**. We recommend using a terminal mutiplexer **on the node**, such as `tmux`
+   or `screen` on **Linux**, will ensure it, even if you get disconnected from it. However, validate against your cluster configuration for
+   potential limits that could be enforced on **process run time**.
+   :::
+
+2. Move to a suitable **working directory** (we recommend a directory under your personal `/scratch`). 
+
+3. Load `nextflow` and `apptainer` in the environment at their **latest possible versions**
+
+   ```bash
+   module load nextflow apptainer
+   ```
+
+4. Set the following environment variables :
+
+   ```bash
+   export NXF_APPTAINER_CACHEDIR="<containers location>"
+   export SLURM_ACCOUNT="<slurm account name>"
+   export SBATCH_ACCOUNT=$SLURM_ACCOUNT
+   export SALLOC_ACCOUNT=$SLURM_ACCOUNT
+   ```
+
+   |||
+   |-|-|
+   | **`<containers location>`** | The directory where you downloaded the pipeline's containers for offline usage. |
+   | **`<slurm account name>`** | The account nextflow will use to submit the pipeline's jobs. |
+
+5. **If your cluster uses a RAM mount for temporary files**, change its location to a directory on `/scratch`, or another
+   physical filesystem :
+
+   ```bash
+   export TMPDIR="<physical location>"
+   ```
+
+   |||
+   |-|-|
+   | **`<physical location>`** | Directory on a physical filesystem accessible to compute nodes |
+
+6. Launch the pipeline with the command below, carefully replacing the variable fields :
+
+   ```bash
+   nextflow run <pipeline name> -r <version> \
+      --input <input> \
+      --outdir <output> \
+      -profile apptainer,slurm \      # Add any processing profiles you want to run.
+      -resume
+   ```
+
+   |||
+   |-|-|
+   | **`<pipeline name>`** | Name of your downloaded pipeline. On newer nextflow version, use the **repository name** (usually from Github). **You can supply the path to the pipeline instead**, but you must omit the `-r <version>` argument. |
+   | **`<version>`** | The version of the pipeline to use, if using its **repository name** above. |
+   | **`<input>`** | The directory containing the input files. **This directory must be optimally accessible for reading by computing nodes**. |
+   | **`<output>`** | The directory where the output files will be published. **This directory must be optimally accessible for writing by computing nodes**. |
+
+</Steps>
+
+
+
+### HPC in Single Node mode
+
+ :::danger
+Exceptions aside, **compute nodes in HPC facilities don't have access to the web**. You **need** to first deploy the offline
+environment following [the guidelines here](/pipelines/offline).
+:::
+
+<Steps>
+
+1. Open a terminal **on a login node** on the cluster where you want to run the pipeline.
+
+2. Move to a suitable **working directory** (we recommend a directory under your personal `/scratch`).
+
+3. Create a **`sbatch` submission script. You can copy the one provided below and replace its `<variables>` with values fitting
+   your environment
+
+   ```bash
+   #!/bin/sh
+   #SBATCH --mail-user=<email>
+   #SBATCH --mail-type=ALL
+
+   #SBATCH --account=<account>
+   #SBATCH --nodes=1
+   #SBATCH --cpus-per-task=<cpus on node>
+   #SBATCH --mem=<memory on node>
+   #SBATCH --time=<maximum execution time>
+
+   # Load the required modules.
+   module load nextflow apptainer
+
+   # Variables for containers, etc.
+   export NXF_APPTAINER_CACHEDIR=<containers location>
+
+   # Call for the pipeline execution.
+   nextflow run <pipeline name> -r <version> \
+      --input <input> \
+      --outdir <output> \
+      -profile apptainer \
+      -resume
+   ```
+
+   |||
+   |-|-|
+   | **`<email>`** | E-mail address where to send notifications on the status of the pipeline's execution. |
+   | **`<account>`** | Slurm account to access computing resources. |
+   | **`<cpus on node>`** | Number of cpus to reserve for processing. We recommend setting this to the maximum number of cpus available, but refer to your pipeline's documentation for details. |
+   | **`<memory on node>`** | Amount of RAM to reserve for processing. **This also includes all potential temporary mounts (`tmpfs`)**. |
+   | **`<maximum execution time>`** | Amount of time allowed for the pipeline to run before cancellation. |
+   | **`<containers location>`** | The directory where you downloaded the pipeline's containers for offline usage. |
+   | **`<pipeline name>`** | Name of your downloaded pipeline. On newer nextflow version, use the **repository name** (usually from Github). **You can supply the path to the pipeline instead**, but you must omit the `-r <version>` argument. |
+   | **`<version>`** | The version of the pipeline to use, if using its **repository name** above. |
+   | **`<input>`** | The directory containing the input files. **This directory must be optimally accessible for reading by computing nodes**. |
+   | **`<output>`** | The directory where the output files will be published. **This directory must be optimally accessible for writing by computing nodes**. |
+
+</Steps>

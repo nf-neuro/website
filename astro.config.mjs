@@ -12,6 +12,9 @@ export default defineConfig({
     site: "https://nf-neuro.github.io",
     base: "/",
     trailingSlash: 'never',
+    redirects: {
+        '/pipelines/download': 'https://raw.githubusercontent.com/nf-neuro/modules/main/assets/download_pipeline.sh'
+    },
     integrations: [
         starlight({
             title: 'nf-neuro',
@@ -181,6 +184,13 @@ export default defineConfig({
                         link: 'pipelines',
                         icon: 'seti:pipeline',
                         items: [
+                            {
+                                label: 'Running pipelines',
+                                items : [
+                                    { label: 'Common guidelines', slug: 'pipelines/run' },
+                                    { label: 'Offline execution', slug: 'pipelines/offline' }
+                                ]
+                            },
                             { label: 'Add your pipeline', slug: 'pipelines/submit' }
                         ]
                     }

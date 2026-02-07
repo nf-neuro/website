@@ -1,0 +1,127 @@
+---
+title: Offline environments
+description: Running pipelines in offline environments
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Pipelines backed by the nf-neuro (and [nf-core](https://nf-co.re)) framework are designed to run with internet access. This makes them
+easier to install and use. **They can also run completely offline**, with the help of a few commands to download everything required
+prior to execution.
+
+## Prerequisites
+
+|||
+|-|-|
+|**[Nextflow](https://www.nextflow.io/docs/latest/install.html) &geq; 23.10.0** | The download procedure uses [nextflow inspect](https://www.nextflow.io/docs/latest/reference/cli.html#inspect) to compute the **list of containers to download**. |
+| **Container engine** | **The container engine you will use to execute the pipeline needs to be installed**. The download procedure will populate its caches with the downloaded containers. We recommend [Docker](https://docs.docker.com/get-started/get-docker/) for local usage (where you have administrative rights), and [apptainer](https://apptainer.org/docs/admin/main/installation.html) anywhere else (computing clusters in the cloud or HPC infrastructures are typical use-cases). |
+
+
+## Setup using the `nf-core` command
+
+:::caution
+The `nf-core` framework is still being heavily developed, so is the `nf-neuro` ecosystem. If you experience problems setuping using the
+`nf-core` command, we recommend you instead use `nf-neuro` custom scripts through the procedure described [further down](#setup-using-nf-neuro-custom-scripts).
+:::
+
+<Steps>
+
+1. Install the `nf-core` command. We give an example below using `pip`, refer to the [official documentation](https://nf-co.re/docs/nf-core-tools/installation)
+   for detailled instructions.
+
+   ```bash
+   python -m venv nf-core-env
+   source nf-core-env/bin/activate
+   python -m pip install nf_core==3.5.2
+   ```
+
+   :::caution[Installation on HPC]
+   Most HPC facilities distribute custom builds of python packages, which might conflict with `nf-core`. Refer to its administrators if you have problems
+   with installation, or defer to the custom scripts below.
+   :::
+
+   :::caution[Alliance Canada users]
+   As of today, the [documentation for nf-core](https://docs.alliancecan.ca/wiki/Nextflow) given by Alliance Canada is **outdated**. We've had success
+   installing latest versions with the commands [below](#setup-using-nf-neuro-custom-scripts) :
+
+   ```bash
+   module purge
+   module load nextflow/23.1.0  # Refer to the pipeline you are running for its minimal nextflow version
+   module load apptainer/3.5.2  # Refer to the pipeline you are running for its minimal apptainer version
+   module load python/3.12
+   module load rust
+   module load postgresql
+   module load python-build-bundle
+   module load scipy-stack
+   python -m venv nf-core-env
+   source nf-core-env/bin/activate
+   python -m pip install nf_core==3.5.2
+   ```
+   :::
+
+2. Run the pipeline download command, replacing the `<variables>` following your configuration :
+
+   :::caution[Apptainer/Singularity users]
+   If the `NXF_APPTAINER_CACHEDIR` or `NXF_SINGULARITY_CACHEDIR` environment variable is found in the environment, containers will first be downloaded to its
+   location before **being copied to the specified download location** under the `singularity-containers` directory. This can be good for sharing cache between
+   users or pipelines. However, pipelines with **large containers or a large number of them** could fill up your system. **Refer to your pipeline's documentation
+   for the recommended procedure**. In doubt, **unset those variables**.
+   :::
+
+   ```bash
+   nf-core pipelines download <pipeline> \
+       --revision <git revision> \
+       --outdir <download location> \
+       --container-system <container engine> \
+       --parallel-downloads <parallel tasks>
+   ```
+
+   :::danger[HPC users]
+   You **must guarantee all download locations** used are accessible to  compute nodes ! It is also **highly recommended to download all configurations** by adding
+   the argument `--download-configuration yes` to the command above.
+   :::
+
+   |||
+   |-|-|
+   | **`<pipeline>`** | Name of the pipeline to download. It must be a **repository name hosting it on Github** (for example, `scilus/sf-tractomics` refers to the `sf-tractomics` pipeline from the `scilus` organisation). |
+   | **`<git revision>`** | Can be the **tag** of a release, a **branch** name or a **commit SHA**. |
+   | **`<download location>`** | The directory where to store the output pipeline, configurations and containers. |
+   | **`<container engine>`** | Either **singularity** (also stands for **apptainer**) or **docker**. It must align with the container engine you selected above. **If using apptainer or singularity, refer to the tip below for detailled configuration**. |
+   | **`<parallel tasks>`** | Number of parallel downloads allowed. |
+
+   :::tip[Configuration for Apptainer/Singularity]
+   Finer configuration is available for **apptainer** and **singularity** :
+
+   |||
+   |-|-|
+   | **`--container-library`** | Remote library (registry) where to pull containers. When in doubt, use `docker.io` |
+   | **`--container-cache-utilisation`** | Set to `copy` by default, which copies containers to a `singularity-containers` directory placed aside the downloaded pipeline. Set to `amend` to disable the copy, **in which case ensure you have set valid cache locations for apptainer (`NXF_APPTAINER_CACHEDIR`) or singularity (`NXF_SINGULARITY_CACHEDIR`) in your environment before download**. |
+   :::
+
+</Steps>
+
+## Setup using `nf-neuro` custom scripts
+
+:::caution
+This setup procedure requires that you use the **Apptainer** or **Singularity** container engine !
+:::
+
+Only two additional prerequisites are necessary to run the script : `jq` and `curl` or `wget`. On **debian** systems (such as Ubuntu), they all can be installed easily
+with `apt-get`. Once installed, use the command below to run the script, replacing every `<variable>` following your setup :
+
+```bash
+curl -fsSL https://nf-neuro.github.io/pipelines/download | bash -s -- \
+    -p <pipeline> \
+    -r <git revision> \
+    -o <containers location> \
+    -c <containers cache> \
+    -d <parallel tasks>
+```
+
+|||
+|-|-|
+| **`<pipeline>`** | Name of the pipeline to download. It must be a **repository name hosting it on Github** (for example, `scilus/sf-tractomics` refers to the `sf-tractomics` pipeline from the `scilus` organisation). |
+| **`<git revision>`** | Can be the **tag** of a release, a **branch** name or a **commit SHA**. |
+| **`<containers location>`** | The directory where to copy the output containers. |
+| **`<containers cache>`** | The directory where to cache the containers before copy. |
+| **`<parallel tasks>`** | Number of parallel downloads allowed. |
