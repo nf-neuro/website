@@ -106,19 +106,19 @@ reserved for workflow confguration.
 
 For the Non-Local Means module, replace the whole script section with the following definition :
 
-```groovy {"1": 2-3} {"2": 5-7} {"3": 9} {"4": 10} {"5": 11} {"6": 12}
+```groovy {"1": 2-3} {"2": 4-5} {"3": 8} {"4": 10} {"5": 11} {"6": 11} {"7": 12}
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
-        ${args.join(" ")} \
-        --processes $tasks.cpus
+        ${args.join(" ")}
     """
 ```
 
@@ -131,19 +131,33 @@ script:
    - The default value for the `prefix` is defined throught the <code class="dark:text-orange-300 text-yellow-800">meta</code> variable, which is an
      [obligatory input](https://nf-co.re/docs/contributing/components/meta_map) containing the metadata associated with the subject.
      It's usage is defined later.
-2. The scilpy command can handle its own parallelization. Using <code class="dark:text-orange-300 text-yellow-800">export</code>,
-   we declared **3 environment variables** to limit the threads used by dependencies (e.g. `ITK`, `OMP`, `OPENBLAS`).
-3. The <code class="dark:text-orange-300 text-yellow-800">scil_denoising_nlmeans.py</code> command is called on an input
+2. In the **groovy header**, we also added a variable named `nthreads`. This Groovy variable uses the <InlineCode parts={frontmatter.taskDotCpu} /> and <code class="dark:text-lime-300 text-sky-700">task.ext.single_thread</code>
+  variables to limit the command's thread count to the number of CPUs allocated to the process.
+3. The scilpy command can handle its own parallelization. Using <code class="dark:text-orange-300 text-yellow-800">export</code>,
+   we declared **1 environment variable** to limit the threads used by dependencies (e.g. `OMP`).
+   So far, we found 3 recurring cases depending on the tool your module used:
+   - if your module uses MRTRIX:
+    ```
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
+    export MRTRIX_RNG_SEED=${task.ext.mrtrix_rng_seed ? task.ext.mrtrix_rng_seed : "1234"}
+    ```
+   - if your module uses SCILPY:
+    ```
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
+    ```
+   - if your module uses ANTS:
+    ```
+    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${task.ext.single_thread ? 1 : task.cpus}
+    export ANTS_RANDOM_SEED=${task.ext.ants_random_seed ?: "1234"}
+    ```
+4. The <code class="dark:text-orange-300 text-yellow-800">scil_denoising_nlmeans.py</code> command is called on an input
    <code class="dark:text-lime-300 text-sky-700">$image</code>, a variable you will define in the `input` section later.
-4. The denoised image is written to a file named <InlineCode parts={frontmatter.coloredDenoised} />, with
+5. The denoised image is written to a file named <InlineCode parts={frontmatter.coloredDenoised} />, with
    <InlineCode parts={frontmatter.coloredPrefix} /> as defined in the **groovy header**. You will define an `output` to catch this file later.
    - The brackets usage around <InlineCode parts={frontmatter.coloredPrefix} /> is equivalent to <code class="dark:text-lime-300 text-sky-700">$prefix</code>.
-5. The user's custom arguments are passed to the command, by unraveling the <code class="dark:text-orange-300 text-yellow-800">args</code> variable
+6. The user's custom arguments are passed to the command, by unraveling the <code class="dark:text-orange-300 text-yellow-800">args</code> variable
    using <code class="dark:text-orange-300 text-yellow-800">join</code>, a **groovy** operator.
-6. The <InlineCode parts={frontmatter.taskDotCpu} /> variable is used to limit the number of threads used by the command to
-   the number of CPUs allocated to the process.
-   - If the command allows it, this can also be done for memory (<InlineCode parts={frontmatter.taskDotMemory} />) and other
-   [process](https://www.nextflow.io/docs/latest/reference/process.html) properties and directives.
+7. The groovy var <code class="dark:text-orange-300 text-yellow-800">args</code> is used here to compile the different params.
 </Steps>
 :::
 
@@ -185,15 +199,15 @@ grouped using a tuple** :
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
-        ${args.join(" ")} \
-        --processes $tasks.cpus
+        ${args.join(" ")}
     """
 ```
 
@@ -219,23 +233,23 @@ For a `path`, the default value is the **empty list** `[]`. For the various type
 by `val`, refer to the link above.
 :::
 
-```diff lang="groovy" ins=", path(mask) /* optional, input = [] */" {"1": 2} {"2": 6} {"3": 14}
+```diff lang="groovy" ins=", path(mask) /* optional, input = [] */" {"1": 2} {"2": 8} {"3": 15}
 input:
     tuple val(meta), path(image), path(mask) /* optional, input = [] */
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
 +    def input_mask = mask ? "--mask_denoise $mask" : ""
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
 +        $input_mask \
-        ${args.join(" ")} \
-        --processes $tasks.cpus
+        ${args.join(" ")}
     """
 ```
 
@@ -283,17 +297,17 @@ input:
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
     def input_mask = mask ? "--mask_denoise $mask" : ""
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
         $input_mask \
-        ${args.join(" ")} \
-        --processes $tasks.cpus
+        ${args.join(" ")}
     """
 ```
 
@@ -318,21 +332,21 @@ output:
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
     def input_mask = mask ? "--mask_denoise $mask" : ""
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
         $input_mask \
-        ${args.join(" ")} \
-        --processes $tasks.cpus
+        ${args.join(" ")}
 
 +    cat <<-END_VERSIONS > versions.yml
 +    "${task.process}":
-+        scilpy: \$(pip list --disable-pip-version-check --no-python-version-warning | grep scilpy | tr -s ' ' | cut -d' ' -f2)
++        scilpy: \$(uv pip -q -n list | grep scilpy | tr -s ' ' | cut -d' ' -f2)
 +    END_VERSIONS
     """
 ```
@@ -341,7 +355,7 @@ script:
 For [scilpy](https://github.com/scilus/scilpy), we use the command :
 
 ```bash frame="none"
-pip list --disable-pip-version-check --no-python-version-warning | grep scilpy | tr -s ' ' | cut -d' ' -f2
+uv pip -q -n list | grep scilpy | tr -s ' ' | cut -d' ' -f2
 ```
 
 Each software has its own way of exporting the version, so you will need to adapt this command to your needs.
@@ -384,7 +398,7 @@ stub:
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        scilpy: \$(pip list --disable-pip-version-check --no-python-version-warning | grep scilpy | tr -s ' ' | cut -d' ' -f2)
+        scilpy: \$(uv pip -q -n list | grep scilpy | tr -s ' ' | cut -d' ' -f2)
     END_VERSIONS
     """
 ```
@@ -434,21 +448,20 @@ when:
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
-    def input_mask = mask ? "--mask $mask" : ""
+    args += "--processes $nthreads"
+    def input_mask = mask ? "--mask_denoise $mask" : ""
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
     scil_denoising_nlmeans.py $image \
         ${prefix}__denoised.nii.gz \
         $input_mask \
-        ${args.join(" ")} \
-        --processes $task.cpus
+        ${args.join(" ")}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        scilpy: \$(pip list --disable-pip-version-check --no-python-version-warning | grep scilpy | tr -s ' ' | cut -d' ' -f2)
+        scilpy: \$(uv pip -q -n list | grep scilpy | tr -s ' ' | cut -d' ' -f2)
     END_VERSIONS
     """
 
@@ -461,7 +474,7 @@ stub:
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        scilpy: \$(pip list --disable-pip-version-check --no-python-version-warning | grep scilpy | tr -s ' ' | cut -d' ' -f2)
+        scilpy: \$(uv pip -q -n list | grep scilpy | tr -s ' ' | cut -d' ' -f2)
     END_VERSIONS
     """
 }

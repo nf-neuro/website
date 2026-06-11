@@ -72,6 +72,8 @@ output:
 script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: []
+    def nthreads = task.ext.single_thread ? 1 : task.cpus
+    args += "--processes $nthreads"
     def input_mask = mask ? "--mask_denoise $mask" : ""
 +    def noise_mask = noise_mask ? "--mask_sigma $noise_mask" : ""
 +    def ncoils = task.ext.number_of_coils ? "--number_coils $task.ext.number_of_coils" : "--number_coils 1"
@@ -85,10 +87,9 @@ script:
 +        method = task.ext.method ? "--$task.ext.method" : "--basic_sigma"
 +        save_mask = (task.ext.method == "piesno") ? "--save_piesno_mask ${prefix}__piesno_noise_mask.nii.gz" : ""
 +    }
+
     """
-    export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-    export OMP_NUM_THREADS=1
-    export OPENBLAS_NUM_THREADS=1
+    export OMP_NUM_THREADS=${task.ext.single_thread ? 1 : task.cpus}
 
 -    scil_denoising_nlmeans.py $image ${prefix}__denoised.nii.gz $input_mask ${args.join(" ")} --processes $task.cpus
 +    scil_denoising_nlmeans.py $image ${prefix}__denoised.nii.gz $input_mask $noise_mask $save_mask \

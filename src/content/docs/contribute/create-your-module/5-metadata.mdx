@@ -65,49 +65,6 @@ keywords:
 +      homepage: "https://github.com/scilus/scilpy"
 ```
 
-## The `args` field
-
-The args section documents which arguments can be supplied to your module via `task.ext` to customize its behavior.
-Depending the kind of argument, you will need to supply a `type` (typically `string`, `float`, `int`, or `boolean`), a
-`description`, a `choices` (a list of possible values), and a `default` value. For the `denoising/nlmeans` module, the
-arguments are `number_of_coils`, `sigma`, `sigma_from_all_voxels`, `gaussian` and `method`. Refer to the example below
-to define them :
-
-```diff lang="yaml"
----
-name: "denoising_nlmeans"
-description: |
-  ...
-keywords:
-  ...
-tools:
-  ...
-+args:
-+  - number_of_coils:
-+      type: int
-+      description: The number of coils used during sequence acquisition.
-+      default: 1
-+  - sigma:
-+      type: float
-+      description: The noise standard deviation. Overrides automatic estimation.
-+      default: null
-+  - sigma_from_all_voxels:
-+      type: boolean
-+      description: Use all voxels to estimate the noise standard deviation.
-+      default: false
-+  - gaussian:
-+      type: boolean
-+      description: Use a Gaussian kernel for the denoising.
-+      default: false
-+  - method:
-+      type: string
-+      description: The method used to estimate the noise standard deviation.
-+      choices:
-+        - basic_sigma
-+        - piesno
-+      default: basic_sigma
-```
-
 ## The `input` field
 
 The next section documents the `inputs` of your module. It contains an entry for every input channel, specifying the
@@ -122,8 +79,6 @@ description: |
 keywords:
   ...
 tools:
-  ...
-args:
   ...
 input:
 +  - - meta:
@@ -152,6 +107,55 @@ The types allowed for the `inputs` and `outputs` are : `map`, `list`, `file`, `d
 and `boolean`.
 :::
 
+## The `args` field
+
+The args section documents which arguments can be supplied to your module via `task.ext` to customize its behavior.
+Depending the kind of argument, you will need to supply a `type` (typically `string`, `float`, `int`, or `boolean`), a
+`description`, a `choices` (a list of possible values), and a `default` value. For the `denoising/nlmeans` module, the
+arguments are `number_of_coils`, `sigma`, `sigma_from_all_voxels`, `gaussian` and `method`. Refer to the example below
+to define them :
+
+```diff lang="yaml"
+---
+name: "denoising_nlmeans"
+description: |
+  ...
+keywords:
+  ...
+tools:
+  ...
+input:
+  ...
++args:
++  - number_of_coils:
++      type: int
++      description: The number of coils used during sequence acquisition.
++      default: 1
++  - sigma:
++      type: float
++      description: The noise standard deviation. Overrides automatic estimation.
++      default: null
++  - sigma_from_all_voxels:
++      type: boolean
++      description: Use all voxels to estimate the noise standard deviation.
++      default: false
++  - gaussian:
++      type: boolean
++      description: Use a Gaussian kernel for the denoising.
++      default: false
++  - method:
++      type: string
++      description: The method used to estimate the noise standard deviation.
++      choices:
++        - basic_sigma
++        - piesno
++      default: basic_sigma
++  - single_thread:
++      type: boolean
++      description: If true, the command will be run in single-threaded mode. By default, the command will use multiple threads based on the number of CPUs allocated to the task.
++      default: false
+```
+
 ## The `output` field
 
 Finally, it's time to document the `outputs` of your module! This section is identical in its structure as the `input`
@@ -166,9 +170,9 @@ keywords:
   ...
 tools:
   ...
-args:
-  ...
 input:
+  ...
+args:
   ...
 +output:
 +  - image:
