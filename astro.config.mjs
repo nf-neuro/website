@@ -28,7 +28,7 @@ export default defineConfig({
                 {
                     tag: 'script',
                     attrs: {
-                        src: 'https://simpleanalyticscdn.com/latest.js',
+                        src: 'https://scripts.simpleanalyticscdn.com/latest.js',
                         defer: true,
                         'data-domain': 'nf-neuro.github.io'
                     },
