@@ -10,6 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@arraypress/analytics-astro": "^1.0.1",
     "@astrojs/starlight": "^0.38.1",
     "@astrojs/starlight-docsearch": "^0.7.0",
     "@astrojs/starlight-tailwind": "^5.0.0",
@@ -20,10 +21,10 @@
     "chart.js": "^4.5.1",
     "js-yaml": "^4.1.1",
     "pnpm": "^10.33.0",
-    "remark-rehype": "11.1.2",
     "rehype-document": "^7.0.3",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
+    "remark-rehype": "11.1.2",
     "sharp": "^0.34.5",
     "starlight-sidebar-topics": "^0.6.2",
     "tailwindcss": "4.1.12",

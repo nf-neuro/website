@@ -23,15 +23,7 @@ export default defineConfig({
                 dark: './src/assets/nf-neuro_logo_dark.svg',
                 replacesTitle: true,
             },
-            // Add a script to use web analytics.
             head: [
-                {
-                    tag: 'script',
-                    attrs: {
-                        src: 'https://scripts.simpleanalyticscdn.com/latest.js',
-                        defer: true,
-                    },
-                },
                 {
                     tag: 'meta',
                     attrs: {
@@ -47,6 +39,7 @@ export default defineConfig({
             components: {
                 // Override the default `Hero` component.
                 Hero: './src/components/newHero.astro',
+                Head: './src/components/Head.astro',
             },
             social: [
                 { icon: "github", label: "nf-neuro", href: 'https://github.com/nf-neuro/modules.git'}
