@@ -13,9 +13,6 @@ importers:
 
   .:
     dependencies:
-      '@arraypress/analytics-astro':
-        specifier: ^1.0.1
-        version: 1.0.1(astro@6.1.5(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.53.2)(terser@5.39.0)(typescript@5.8.2)(yaml@2.7.0))
       '@astrojs/starlight':
         specifier: ^0.38.1
         version: 0.38.3(astro@6.1.5(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.53.2)(terser@5.39.0)(typescript@5.8.2)(yaml@2.7.0))
@@ -163,12 +160,6 @@ packages:
 
   '@antfu/utils@8.1.1':
     resolution: {integrity: sha512-Mex9nXf9vR6AhcXmMrlz/HVgYYZpVGJ6YlPgwl7UnaFpnshXs6EK/oa5Gpf3CzENMjkvEx2tQtntGnb7UtSTOQ==}
-
-  '@arraypress/analytics-astro@1.0.1':
-    resolution: {integrity: sha512-dDCU1qn20CjMkuorJGwrjm6BV+ClmYuAiT8cIx/ZWYV32xHCXPP9Cy9DW4xI7/ofSmUBQqYXozOEy8LYdjjgOQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      astro: ^6.0.0 || ^7.0.0
 
   '@astrojs/compiler@3.0.1':
     resolution: {integrity: sha512-z97oYbdebO5aoWzuJ/8q5hLK232+17KcLZ7cJ8BCWk6+qNzVxn/gftC0KzMBUTD8WAaBkPpNSQK6PXLnNrZ0CA==}
@@ -2611,10 +2602,6 @@ snapshots:
       tinyexec: 1.0.2
 
   '@antfu/utils@8.1.1': {}
-
-  '@arraypress/analytics-astro@1.0.1(astro@6.1.5(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.53.2)(terser@5.39.0)(typescript@5.8.2)(yaml@2.7.0))':
-    dependencies:
-      astro: 6.1.5(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.53.2)(terser@5.39.0)(typescript@5.8.2)(yaml@2.7.0)
 
   '@astrojs/compiler@3.0.1': {}
 
