@@ -24,6 +24,24 @@ export default defineConfig({
                 replacesTitle: true,
             },
             head: [
+                // SimpleAnalytics
+                {
+                    tag: 'script',
+                    attrs: {
+                        src: 'https://simpleanalyticscdn.com/latest.js',
+                        defer: true,
+                        'data-domain': 'nf-neuro.github.io'
+                    },
+                },
+                // GoatCounter analytics
+                {
+                    tag: 'script',
+                    attrs: {
+                        async: true,
+                        src: '//gc.zgo.at/count.js',
+                        'data-goatcounter': 'https://nf-neuro.goatcounter.com/count'
+                    }
+                },
                 {
                     tag: 'meta',
                     attrs: {
@@ -39,7 +57,6 @@ export default defineConfig({
             components: {
                 // Override the default `Hero` component.
                 Hero: './src/components/newHero.astro',
-                Head: './src/components/Head.astro',
             },
             social: [
                 { icon: "github", label: "nf-neuro", href: 'https://github.com/nf-neuro/modules.git'}

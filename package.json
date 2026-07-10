@@ -10,7 +10,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@arraypress/analytics-astro": "^1.0.1",
     "@astrojs/starlight": "^0.38.1",
     "@astrojs/starlight-docsearch": "^0.7.0",
     "@astrojs/starlight-tailwind": "^5.0.0",
