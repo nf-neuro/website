@@ -186,10 +186,10 @@ export default defineConfig({
                             {
                                 label: 'Advanced Tutorials',
                                 items: [
-									{ label: 'Conventions', slug: 'guides/advanced-tutorials/conventions' },
-                                    { label: 'BIDS Input', slug: 'guides/advanced-tutorials/1-bidsinput' },
-                                    { label: 'BIDS Output', slug: 'guides/advanced-tutorials/2-bidsoutput' },
-                                    { label: 'MultiQC', slug: 'guides/advanced-tutorials/3-multiqc' }
+									{ label: 'Conventions', slug: 'guides/advanced-tutorials/1-conventions' },
+                                    { label: 'BIDS Input', slug: 'guides/advanced-tutorials/2-bidsinput' },
+                                    { label: 'BIDS Output', slug: 'guides/advanced-tutorials/3-bidsoutput' },
+                                    { label: 'MultiQC', slug: 'guides/advanced-tutorials/4-multiqc' }
                                 ]
                             }
                         ]
