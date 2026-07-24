@@ -112,6 +112,17 @@ export default defineConfig({
                         ]
                     },
                     {
+                        label: 'BIDS',
+                        link: 'bids',
+                        icon: 'seti:db',
+                        items: [
+                            { label: 'NF-BIDS', link: 'https://nf-neuro.github.io/nf-bids' },
+                            { label: 'BIDS Input', slug: 'bids/1-input' },
+                            { label: 'BIDS Output', slug: 'bids/2-output' },
+                            { label: 'Conventions', slug: 'bids/3-conventions' }
+                        ]
+                    },
+                    {
                         label: 'Contribute',
                         link: 'contribute/setup',
                         icon: 'heart',
@@ -186,10 +197,7 @@ export default defineConfig({
                             {
                                 label: 'Advanced Tutorials',
                                 items: [
-									{ label: 'Conventions', slug: 'guides/advanced-tutorials/1-conventions' },
-                                    { label: 'BIDS Input', slug: 'guides/advanced-tutorials/2-bidsinput' },
-                                    { label: 'BIDS Output', slug: 'guides/advanced-tutorials/3-bidsoutput' },
-                                    { label: 'MultiQC', slug: 'guides/advanced-tutorials/4-multiqc' }
+                                    { label: 'MultiQC', slug: 'guides/advanced-tutorials/1-multiqc' }
                                 ]
                             }
                         ]
@@ -212,6 +220,9 @@ export default defineConfig({
             ]
         })
     ],
+    image: {
+        domains: ['raw.githubusercontent.com'],
+    },
 	markdown: {
 		remarkPlugins: [remarkMath],
 		rehypePlugins: [

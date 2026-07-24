@@ -1,0 +1,20 @@
+---
+import { Image } from 'astro:assets';
+
+interface Props {
+  lightSrc: ImageMetadata;
+  darkSrc: ImageMetadata;
+  alt: string;
+}
+
+const { lightSrc, darkSrc, alt } = Astro.props;
+---
+{/* The light image is hidden when Starlight applies the dark theme attribute */}
+<div class="block dark:hidden [[data-theme=dark]_&]:hidden">
+  <Image src={lightSrc} alt={alt} inferSize />
+</div>
+
+{/* The dark image is only visible when Starlight applies the dark theme attribute */}
+<div class="hidden dark:block [[data-theme=dark]_&]:block">
+  <Image src={darkSrc} alt={alt} inferSize />
+</div>
